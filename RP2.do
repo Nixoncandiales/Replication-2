@@ -8,7 +8,7 @@
 *	02/27/2020												*
 *************************************************************
 *prueba prueba prueba
-cd "/Users/Nixon/Desktop/Ma Economics/Spring 20/CI/PS/Assignment2/Rp/Do"
+cd "/Users/Nixon/Desktop/Ma Economics/Spring 20/CI/Problem Sets/Assignment2/Rp/Do"
 use ../Data/pums80.dta, clear
 desc
 
@@ -54,19 +54,71 @@ esttab table2, nostar se label title(Table2- Descriptive Statistics, Women Aged 
 eststo clear
 
 //3
- ** 2sls estimation
- ivregress 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first vce(r)
+** OLS estimation
+qui eststo ols1: regress workedm morekids agem1 agefstm black hispan othrace boy1st boy2nd,r // regular ols estimators
+qui eststo ols2: regress weeksm1 morekids agem1 agefstm black hispan othrace boy1st boy2nd,r // regular ols estimators
+qui eststo ols3: regress hourswm morekids agem1 agefstm black hispan othrace boy1st boy2nd,r // regular ols estimators
+qui eststo ols4: regress incomem morekids agem1 agefstm black hispan othrace boy1st boy2nd,r // regular ols estimators
+
+** 2SLS CIV covariate adjusted iv estimator  // WALD ESTIMATOR (E[y|z==1]-E[y|z==0])/(E[x|z==1]-E[x|z==0])
+qui regress workedm agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(y,z)
+mat a =e(b)
+qui regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(x,z)
+mat b =e(b)
+scalar civ1 = a[1,8]/b[1,8] //Point estimate for CIV regression.
+
+qui regress weeksm1 agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(y,z)
+mat a =e(b)
+qui regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(x,z)
+mat b =e(b)
+scalar civ2 = a[1,8]/b[1,8] //Point estimate for CIV regression.
+
+qui regress hourswm agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(y,z)
+mat a =e(b)
+qui regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(x,z)
+mat b =e(b)
+scalar civ3 = a[1,8]/b[1,8] //Point estimate for CIV regression.
+
+qui regress incomem agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(y,z)
+mat a =e(b)
+qui regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r // To get cor(x,z)
+mat b =e(b)
+scalar civ4 = a[1,8]/b[1,8] //Point estimate for CIV regression.
+
+ ** 2SLS ivregress estimation
+quie eststo ivreg1: ivregress 2sls workedm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo ivreg2: ivregress 2sls weeksm1 agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo ivreg3: ivregress 2sls hourswm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo ivreg4: ivregress 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+
+
  
- ivregress2 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first
+ ivregress2 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first 
      est restore first
-    outreg2 using myfile.tex, cttop(first) replace
+    outreg2 using myfile.txt, cttop(first) 
 	 est restore second
     estat firststage
     local fstat `r(mineig)'
     estat endogenous
     local p_durbin `r(p_durbin)'
-    outreg2 using myfile.txt, cttop(second) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin')
+    outreg2 using myfile.txt, cttop(second) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', Civ, civ1) 
 
+** 2SLS Manually
+quie eststo first: regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r
+quie predict morekids_hat,xb
+replace morekids = morekids_hat
+qui eststo twosls1: reg workedm morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
+qui eststo twosls2: reg weeksm1 morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
+qui eststo twosls3: reg hourswm morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
+qui eststo twosls4: reg incomem morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
+drop morekids_hat
+replace morekids = morekids2
+	
+//TABLES
+
+* table 1
+esttab ols1 twosls1 ivreg1 ols2 twosls2 ivreg2
+esttab ols3 twosls3 ivreg3 ols4 twosls4 ivreg4
 
  
  
