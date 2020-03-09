@@ -86,25 +86,15 @@ mat b =e(b)
 scalar civ4 = a[1,8]/b[1,8] //Point estimate for CIV regression.
 
  ** 2SLS ivregress estimation
-quie eststo ivreg1: ivregress 2sls workedm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
-quie eststo ivreg2: ivregress 2sls weeksm1 agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
-quie eststo ivreg3: ivregress 2sls hourswm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
-quie eststo ivreg4: ivregress 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo iv1: ivregress 2sls workedm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo iv2: ivregress 2sls weeksm1 agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo iv3: ivregress 2sls hourswm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie eststo iv4: ivregress 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), vce(r)
+quie ivregress2 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first 
 
-
- 
- ivregress2 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first 
-     est restore first
-    outreg2 using myfile.txt, cttop(first) 
-	 est restore second
-    estat firststage
-    local fstat `r(mineig)'
-    estat endogenous
-    local p_durbin `r(p_durbin)'
-    outreg2 using myfile.txt, cttop(second) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', Civ, civ1) 
 
 ** 2SLS Manually
-quie eststo first: regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r
+quie eststo instrument: regress morekids agem1 agefstm black hispan othrace boy1st boy2nd samesex,r
 quie predict morekids_hat,xb
 replace morekids = morekids_hat
 qui eststo twosls1: reg workedm morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
@@ -112,16 +102,107 @@ qui eststo twosls2: reg weeksm1 morekids agem1 agefstm black hispan othrace boy1
 qui eststo twosls3: reg hourswm morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
 qui eststo twosls4: reg incomem morekids agem1 agefstm black hispan othrace boy1st boy2nd ,r
 drop morekids_hat
-replace morekids = morekids2
+replace morekids = morekids2/100
 	
-//TABLES
+//TABLE USIN OUTREG2
 
-* table 1
-esttab ols1 twosls1 ivreg1 ols2 twosls2 ivreg2
-esttab ols3 twosls3 ivreg3 ols4 twosls4 ivreg4
+******** TABLE 1
+//Dependent Variable workedm	
+	quie ivregress2 2sls workedm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first
+	est restore ols1
+	outreg2 using myfile.txt, cttop(OLS) tex replace
+	est restore second
+    quie estat firststage
+    local fstat `r(mineig)'
+    quie estat endogenous
+    local p_durbin `r(p_durbin)'
+    outreg2 using myfile.txt, cttop(2SLS IV) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse)  append
+	est restore twosls1
+	outreg2 using myfile.txt, cttop(2SLS Manually) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse) append
+	//Dependent Variable weeksm1	
+	quie ivregress2 2sls weeksm1 agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first
+	est restore ols2
+	outreg2 using myfile.txt, cttop(OLS) tex append
+	est restore second
+    quie estat firststage
+    local fstat `r(mineig)'
+    quie estat endogenous
+    local p_durbin `r(p_durbin)'
+    outreg2 using myfile.txt, cttop(2SLS IV) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse)  append
+	est restore twosls2
+	outreg2 using myfile.txt, cttop(2SLS Manually) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse) append
+	
+	
+	******** TABLE 2
+	//Dependent Variable hourswm	
+	quie ivregress2 2sls hourswm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first
+	est restore ols3
+	outreg2 using myfile2.txt, cttop(OLS) tex replace
+	est restore second
+    quie estat firststage
+    local fstat `r(mineig)'
+    quie estat endogenous
+    local p_durbin `r(p_durbin)'
+    outreg2 using myfile2.txt, cttop(2SLS IV) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse)  append
+	est restore twosls3
+	outreg2 using myfile2.txt, cttop(2SLS Manually) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse) append
+	//Dependent Variable incomem	
+	quie ivregress2 2sls incomem agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex), first
+	est restore ols4
+	outreg2 using myfile2.txt, cttop(OLS) tex append
+	quie est restore second
+    qui estat firststage
+    local fstat `r(mineig)'
+    quie estat endogenous
+    local p_durbin `r(p_durbin)'
+    outreg2 using myfile2.txt, cttop(2SLS IV) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse)  append
+	est restore twosls4
+	outreg2 using myfile2.txt, cttop(2SLS Manually) tex adds(IV F-stat, `fstat', Durbin pval, `p_durbin', IV-Estimator, IVb, (se), IVse) append
 
  
- 
 
 
-//4
+
+/// TABLA USING ESTTAB
+// IV REG
+quie ivregress2 2sls workedm agem1 agefstm black hispan othrace boy1st boy2nd (morekids = samesex)
+est restore first
+mat a =e(b)
+mat b =e(V)
+scalar IVb=a[1,8]
+scalar IVse=b[8,8]^0.5
+est restore second
+estadd scalar IVb
+estadd scalar IVse
+estat firststage
+scalar Fstat=r(mineig)
+estat endogenous
+scalar p_durbin=r(p_durbin)
+estadd scalar Fstat
+estadd scalar p_durbin
+eststo ivreg1
+
+est restore twosls1
+
+esttab ols1 twosls1 ivreg1,extracols(1) stat(N IVb IVse Fstat p_durbin)
+
+
+est restore first
+mat a =e(b)
+mat b =e(V)
+scalar IVb=a[1,8]
+scalar IVse=b[8,8]^0.5
+est restore second
+estadd scalar IVb
+estadd scalar IVse
+estat firststage
+scalar Fstat=r(mineig)
+estat endogenous
+scalar p_durbin=r(p_durbin)
+estadd scalar Fstat
+estadd scalar p_durbin
+eststo ivreg3
+esttab ols1 twosls1 ivreg1 ols2 twosls2 ivreg2 ivreg3,extracols(1) stat(N IVb IVse Fstat p_durbin) replace
+scalar drop _all
+
+//esttab ols1 twosls1 ivreg1 ols2 twosls2 ivreg2 ivreg3 using tabla1.tex,extracols(2) stat(N IVb IVse Fstat p_durbin) replace
